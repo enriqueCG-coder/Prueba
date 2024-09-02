@@ -1,0 +1,332 @@
+﻿@{
+    ViewBag.Title = "Titulares";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item">Opciones</li>
+    <li class="breadcrumb-item active">Listado de Titulares </li>
+</ol>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-table me-1"></i> Listado de Titulares 
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-sm-12">
+                <button class="btn btn-success" type="button" onclick="abrirModal(null)"> <i class="fas fa-plus"></i> Nuevo Titular</button>
+            </div>
+        </div>
+
+        <hr />
+        <table id="tabla" class="display responsive" style="width:100%">
+            <thead>
+                <tr>
+                    <th>ID Titular</th>
+                    <th>Nombres</th>
+                    <th>Apellidos</th>
+                    <th>Estado</th>
+                    <th>Opciones administrables</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div  class="modal fade" id="FormModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="exampleModalLabel">Titular</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input id="txtid" type="hidden" name="idTitularTarjeta"/>
+                <form id="formNivel">
+
+                    
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label for="txtNombres">Nombres</label>
+                                <input type="text" class="form-control required" id="txtNombres" name="nombres" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label for="txtApellidos">Apellidos</label>
+                                <input type="text" class="form-control required" id="txtApellidos" name="apellidos" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label for="cboEstado">Estado</label>
+                                <select id="cboEstado" class="form-select">
+                                    <option value="1">Activo</option>
+                                    <option value="0">No Activo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success" onclick="guardar()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!---->
+
+@section scripts{
+
+    <script>
+    var tabladata;
+
+    $(document).ready(function () {
+        cargar(); 
+    });
+
+    // Método para cargar datos en la tabla
+    function cargar() {
+    tabladata = $('#tabla').DataTable({
+        responsive: true,
+        "ajax": {
+            "url": 'https://localhost:7069/api/Titulares/GetTitulares',
+            "type": "GET",
+            "datatype": "json",
+            "dataSrc": "" ,
+            "beforeSend": function () {
+                Swal.fire({
+                    title: 'Cargando...',
+                    text: 'Por favor espera mientras se cargan los datos.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        },
+        "columns": [
+            { "data": "idTitularTarjeta" },
+            { "data": "nombres" },
+            { "data": "apellidos" },
+            {
+                "data": "estado",
+                "render": function (data) {
+                    return data ?
+                        '<span class="badge bg-success">Activo</span>' :
+                        '<span class="badge bg-danger">No Activo</span>';
+                }
+            },
+            {
+                "data": "idTitularTarjeta",
+                "render": function (data, type, row, meta) {
+                    return `
+                        <div class="d-flex align-items-center">
+                            <button class="btn btn-warning btn-editar btn-sm me-2" 
+                                    data-informacion='${JSON.stringify(row)}' 
+                                    title="Editar Titular">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="btn btn-danger btn-eliminar btn-sm" 
+                                    data-informacion='${JSON.stringify(row)}' 
+                                    title="Eliminar Titular">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>`;
+                },
+                "orderable": false,
+                "searchable": false,
+                "width": "90px"
+            }
+        ],
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+        },
+        "preXhr": function () {
+            Swal.fire({
+                title: 'Cargando...',
+                text: 'Por favor, espera mientras se cargan los datos.',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        },
+        "xhr": function () {
+            Swal.close();
+        },
+        "initComplete": function (settings, json) {
+            Swal.fire({
+                title: 'Datos Cargados',
+                text: 'Los datos se han cargado correctamente en la tabla.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+        $(document).on('click', '.btn-editar', function () {
+            var json = $(this).data("informacion");
+            abrirModal(json);
+        });
+
+        $(document).on('click', '.btn-eliminar', function () {
+            var json = $(this).data("informacion");
+            eliminar(json.idTitularTarjeta);
+        });
+    }
+
+    // Método para abrir el modal con los datos a editar
+    function abrirModal(json) {
+        // Verifica si json es un objeto válido
+        if (json && typeof json === 'object') {
+            $("#txtid").val(json.idTitularTarjeta || 0);
+            $("#txtNombres").val(json.nombres || '');
+            $("#txtApellidos").val(json.apellidos || '');
+
+            if (json.estado !== undefined) {
+                $("#cboEstado").val(json.estado ? 1 : 0);
+            } else {
+                console.error("La propiedad 'estado' no está definida en el objeto json");
+                $("#cboEstado").val(1); 
+            }
+        } else {
+            console.error("El objeto json es null, undefined, o no es un objeto");
+            $("#txtid").val(0);
+            $("#txtNombres").val('');
+            $("#txtApellidos").val('');
+            $("#cboEstado").val(1); 
+        }
+
+        $('#FormModal').modal('show');
+    }
+
+    // Método para guardar o actualizar datos
+    function guardar() {
+        var idTitularTarjeta = $("#txtid").val();
+        var nombres = $("#txtNombres").val();
+        var apellidos = $("#txtApellidos").val();
+        var estado =  parseInt($("#cboEstado").val()) == 1 ? true : false;
+
+        var request = {
+            idTitularTarjeta: idTitularTarjeta ? parseInt(idTitularTarjeta) : 0,
+            nombres: nombres,
+            apellidos: apellidos,
+            estado: estado 
+        };
+
+        var url = idTitularTarjeta > 0 ? 'https://localhost:7069/api/Titulares/PutTitular/${idTitularTarjeta}' : 'https://localhost:7069/api/Titulares/PostTitular';
+        var method = idTitularTarjeta > 0 ? "PUT" : "POST";
+
+        jQuery.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(request),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data) {
+                    tabladata.ajax.reload();
+                    $('#FormModal').modal('hide');
+                    url = '';
+                    method = '';
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: 'Los cambios se han guardado correctamente.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo guardar los cambios.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log(xhr.responseText);
+
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al procesar la solicitud: ' + xhr.responseText,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    }
+
+    // Método para eliminar un registro
+    function eliminar(idTitularTarjeta) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, eliminar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                jQuery.ajax({
+                    url: 'https://localhost:7069/api/Titulares/DeleteTitular/' + idTitularTarjeta,
+                    type: "DELETE",
+                    success: function (data) {
+                        if (data) {
+                            tabladata.ajax.reload();
+
+                            Swal.fire(
+                                'Eliminado!',
+                                'El registro ha sido eliminado.',
+                                'success'
+                            );
+
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'No se pudo eliminar el registro.',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.log(xhr.responseText);
+
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Ocurrió un error al eliminar el registro: ' + xhr.responseText,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>
+}
+
+

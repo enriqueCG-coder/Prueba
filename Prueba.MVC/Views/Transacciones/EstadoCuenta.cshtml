@@ -1,0 +1,283 @@
+﻿@{
+    ViewData["Title"] = "Estado de Cuenta";
+}
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item">Opciones</li>
+    <li class="breadcrumb-item">Listado de Tarjetas</li>
+    <li class="breadcrumb-item active">Estado de Cuenta de TC</li>
+</ol>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-chart-bar me-1"></i> Estado de Cuenta de TC
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+
+            <div class="col-sm-12">
+                <label><strong>Nombre del Cliente:</strong></label>
+                <span id="nombres"></span> <span id="apellidos"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <label><strong>Número de Tarjeta de Crédito:</strong></label>
+                <span id="numeroTarjeta"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Monto total:</strong></label>
+                    <span id="saldoActual"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Cuota minima:</strong></label>
+                    <span id="cuotaMinima"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Pago al contado:</strong></label>
+                    <span id="montoContado"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Interes Bonificable:</strong></label>
+                    <span id="intBonificable"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Saldo disponible:</strong></label>
+                    <span id="saldoDisponible"></span>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+        <div class="row align-items-center">
+            <div class="col-md-2 mb-3 d-flex align-items-center">
+                <label for="cboMes" class="me-2"><strong>Mes:</strong></label>
+                <select id="cboMes" class="form-select">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-3 d-flex align-items-center">
+                <label for="txtAnio" class="me-2"><strong>Año:</strong></label>
+                <input type="number" id="txtAnio" name="anio" step="1" min="0" class="form-control">
+            </div>
+            <div class="col-md-2 mb-3">
+                <button type="button" class="btn btn-info w-100" onclick="calcularMes()">Calcular mes</button>
+            </div>
+            <div class="col-md-6 mb-3 d-flex align-items-center">
+                <p class="m-0"><strong>Monto total para el mes seleccionado:</strong> <span id="totalCargo">$0.00</span></p>
+            </div>
+        </div>
+
+        <hr />
+
+        <table id="tabla" class="display responsive" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Número de Autorización</th>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+
+@section scripts{
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const idTarjetaCredito = params.get('idTarjetaCredito');
+
+        console.log('ID Tarjeta de Crédito:', idTarjetaCredito); 
+
+        if (idTarjetaCredito) {
+            obtenerDatosTarjeta(idTarjetaCredito);
+            cargar(idTarjetaCredito);
+        } else {
+            console.log('No se encontró ID de Tarjeta de Crédito en la URL');
+        }
+    });
+
+    // Método para calcular el total del mes seleccionado
+        function calcularMes() {
+            const idTarjetaCredito = $('#txtidTarjetaCredito').val();
+            const mes = $('#cboMes').val();
+            const anio = $('#txtAnio').val();
+
+            $.ajax({
+                url: `https://localhost:7069/api/Transacciones/GetMontoByMes/${idTarjetaCredito}`,
+                type: 'GET',
+                data: { mes: mes, anio: anio }, // enviar datos como parámetros
+                success: function(response) {
+                    console.log('Respuesta del servidor:', response);
+                    if (response) {
+                        $('#totalCargo').text('$' + response.toFixed(2));
+                    } else {
+                        $('#totalCargo').text('$0.00');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error en la llamada Ajax:', error);
+                    Swal.fire({
+                    title: 'Error',
+                    text: 'No hay datos que calcular... ',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                }
+            });
+        }
+
+    //METODO PARA CARGAR LOS DATOS 
+    function obtenerDatosTarjeta(idTarjetaCredito) {
+        const apiUrl = `https://localhost:7069/api/TarjetaCred/GetById/${idTarjetaCredito}`;
+
+        console.log('URL de la API:', apiUrl); 
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos de la tarjeta');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos de la tarjeta obtenidos:', data);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    const tarjeta = data[0]; 
+
+                    document.getElementById('nombres').textContent = tarjeta.nombres || '';
+                    document.getElementById('apellidos').textContent = tarjeta.apellidos || '';
+                    document.getElementById('saldoDisponible').textContent = tarjeta.saldoDisponible.toFixed(2) || '';
+                    document.getElementById('cuotaMinima').textContent = tarjeta.cuotaMinima.toFixed(2) || '';
+                    document.getElementById('montoContado').textContent = tarjeta.montoContado.toFixed(2) || '';
+                    document.getElementById('saldoActual').textContent = tarjeta.saldoActual.toFixed(2) || '';
+                    document.getElementById('intBonificable').textContent = tarjeta.intBonificable.toFixed(2) || '';
+                    
+
+                    const numeroTarjeta = tarjeta.numeroTarjeta || '';
+                    const ocultar = '*'.repeat(numeroTarjeta.length - 4);
+                    const visibles = numeroTarjeta.slice(-4);
+                    document.getElementById('numeroTarjeta').textContent = `${ocultar}${visibles}`;
+                } else {
+                    console.log('No se encontraron datos para la tarjeta de crédito.');
+                }
+            })
+            .catch(error => {
+                console.error('Error en la llamada a la API:', error);
+            });
+    }
+
+
+    var tabladata;
+
+    $(document).ready(function () {
+    });
+
+    // Método para cargar datos en la tabla
+    function cargar(idTarjetaCredito) {
+        tabladata = $('#tabla').DataTable({
+            responsive: true,
+            "ajax": {
+                "url": `https://localhost:7069/api/Transacciones/GetEstadoCuentaById/${idTarjetaCredito}`,
+                "type": "GET",
+                "datatype": "json",
+                "dataSrc": "",
+                "beforeSend": function () {
+                    Swal.fire({
+                        title: 'Cargando...',
+                        text: 'Por favor espera mientras se cargan los datos.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                }
+            },
+            "columns": [
+                { "data": "numAutorizacion" },
+                { "data": "fecha" },
+                { "data": "descripcion" },
+                { "data": "cargo" }
+            ],
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+            },
+            "dom": 'Bfrtip',
+            "buttons": [
+                {
+                    extend: 'excelHtml5',
+                    text: 'Exportar a Excel',
+                    titleAttr: 'Exportar a Excel',
+                    className: 'btn btn-success'
+                }
+            ],
+            "preXhr": function () {
+                Swal.fire({
+                    title: 'Cargando...',
+                    text: 'Por favor, espera mientras se cargan los datos.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            },
+            "xhr": function () {
+                Swal.close();
+            },
+            "initComplete": function (settings, json) {
+                Swal.fire({
+                    title: 'Datos Cargados',
+                    text: 'Los datos se han cargado correctamente en la tabla.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    }
+
+</script>
+}

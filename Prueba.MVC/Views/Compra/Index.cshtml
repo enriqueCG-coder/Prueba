@@ -1,0 +1,169 @@
+﻿@{
+    ViewData["Title"] = "Compras";
+}
+
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item">Opciones</li>
+    <li class="breadcrumb-item">Listado de Tarjetas</li>
+    <li class="breadcrumb-item active">Compra</li>
+</ol>
+
+
+<div class="card mb-4">
+    <div class="card-header">
+        <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+        <i class="fas fa-shopping-cart me-1"></i> Registro de Compras
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+
+            <div class="col-sm-12">
+                <label><strong>Nombre del Cliente:</strong></label>
+                <span id="nombres"></span> <span id="apellidos"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <label><strong>Número de Tarjeta de Crédito:</strong></label>
+                <span id="numeroTarjeta"></span>
+            </div>
+        </div>
+
+        <hr />
+        <form>
+            <div>
+                <label for="txtdescripcion"><strong>Descripción:</strong></label>
+                <textarea id="txtdescripcion" name="descripcion"></textarea>
+            </div>
+
+            <div>
+                <label for="txtmonto"><strong>Monto:</strong></label>
+                <input type="number" id="txtmonto" name="monto" step="0.01">
+            </div>
+
+            <button type="button" class="btn btn-success" onclick="guardarCompra()">Guardar</button>
+            <button type="reset" class="btn btn-danger">Cancelar</button>
+        </form>
+    </div>
+
+</div>
+
+
+
+
+
+@section scripts{
+    <script>
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const idTarjetaCredito = params.get('idTarjetaCredito');
+
+        console.log('ID Tarjeta de Crédito:', idTarjetaCredito); 
+
+        if (idTarjetaCredito) {
+            obtenerDatosTarjeta(idTarjetaCredito);
+        } else {
+            console.log('No se encontró ID de Tarjeta de Crédito en la URL');
+        }
+    });
+
+    //METODO PARA CARGAR LOS DATOS 
+    function obtenerDatosTarjeta(idTarjetaCredito) {
+        const apiUrl = `https://localhost:7069/api/TarjetaCred/GetById/${idTarjetaCredito}`;
+
+        console.log('URL de la API:', apiUrl); 
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos de la tarjeta');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos de la tarjeta obtenidos:', data);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    const tarjeta = data[0]; 
+
+                    document.getElementById('nombres').textContent = tarjeta.nombres || '';
+                    document.getElementById('apellidos').textContent = tarjeta.apellidos || '';
+
+                    const numeroTarjeta = tarjeta.numeroTarjeta || '';
+                    const ocultar = '*'.repeat(numeroTarjeta.length - 4);
+                    const visibles = numeroTarjeta.slice(-4);
+                    document.getElementById('numeroTarjeta').textContent = `${ocultar}${visibles}`;
+                } else {
+                    console.log('No se encontraron datos para la tarjeta de crédito.');
+                }
+            })
+            .catch(error => {
+                console.error('Error en la llamada a la API:', error);
+            });
+    }
+
+    //METODO PARA GUARDAR LA COMPRA 
+    // Método para guardar o actualizar datos
+    function guardarCompra() {
+        // Obtén los valores de los campos del formulario
+        var idTarjetaCredito = $("#txtidTarjetaCredito").val();
+        var descripcion = $("#txtdescripcion").val();
+        var monto = parseFloat($("#txtmonto").val()) || 0.00;
+
+        // Crea el objeto request con todos los datos necesarios
+        var request = {
+            idTarjetaCredito: idTarjetaCredito ? parseInt(idTarjetaCredito) : 0,
+            descripcion: descripcion,
+            monto: monto
+        };
+
+        // Determina la URL y el método HTTP según si hay un idTarjetaCredito
+        var url = `https://localhost:7069/api/Compra/PostCompra/${idTarjetaCredito}`;
+        var method = "POST";
+
+        // Realiza la solicitud AJAX
+        jQuery.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(request),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data) {
+                    $("#txtdescripcion").val("");
+                    $("#txtmonto").val(0.00);
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: 'Compra realizada correctamente!',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo guardar los cambios.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log(xhr.responseText);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al procesar la solicitud: ' + xhr.responseText,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    }
+</script>
+}
+

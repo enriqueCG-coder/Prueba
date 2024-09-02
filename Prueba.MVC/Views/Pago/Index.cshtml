@@ -1,0 +1,205 @@
+﻿@{
+    ViewData["Title"] = "Pagos";
+}
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item">Opciones</li>
+    <li class="breadcrumb-item">Listado de Tarjetas</li>
+    <li class="breadcrumb-item active">Pago</li>
+</ol>
+
+
+<div class="card mb-4">
+    <div class="card-header">
+        <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+        <i class="fas fa-wallet me-1"></i> Registro Pago de TC
+    </div>
+
+    <div class="card-body">
+        <div class="row">
+            <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+
+            <div class="col-sm-12">
+                <label><strong>Nombre del Cliente:</strong></label>
+                <span id="nombres"></span> <span id="apellidos"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <label><strong>Número de Tarjeta de Crédito:</strong></label>
+                <span id="numeroTarjeta"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Monto total:</strong></label>
+                    <span id="saldoActual"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Cuota minima:</strong></label>
+                    <span id="cuotaMinima"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Pago al contado:</strong></label>
+                    <span id="montoContado"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Interes Bonificable:</strong></label>
+                    <span id="intBonificable"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div>
+                    <label><strong>Saldo disponible:</strong></label>
+                    <span id="saldoDisponible"></span>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+
+        <form>
+            <div>
+                <label for="txtmonto"><strong>Monto:</strong></label>
+                <input type="number" id="txtmonto" name="monto" step="0.01" min="0" placeholder="0.00">
+            </div>
+
+            <button type="button" class="btn btn-success" onclick="guardarPago()">Guardar</button>
+            <button type="reset" class="btn btn-danger">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+<!---->
+
+
+@section scripts{
+    <script>
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const idTarjetaCredito = params.get('idTarjetaCredito');
+
+        console.log('ID Tarjeta de Crédito:', idTarjetaCredito); 
+
+        if (idTarjetaCredito) {
+            obtenerDatosTarjeta(idTarjetaCredito);
+        } else {
+            console.log('No se encontró ID de Tarjeta de Crédito en la URL');
+        }
+    });
+
+    //METODO PARA CARGAR LOS DATOS 
+    function obtenerDatosTarjeta(idTarjetaCredito) {
+        const apiUrl = `https://localhost:7069/api/TarjetaCred/GetById/${idTarjetaCredito}`;
+
+        console.log('URL de la API:', apiUrl); 
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos de la tarjeta');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos de la tarjeta obtenidos:', data);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    const tarjeta = data[0]; 
+
+                    document.getElementById('nombres').textContent = tarjeta.nombres || '';
+                    document.getElementById('apellidos').textContent = tarjeta.apellidos || '';
+                    document.getElementById('saldoDisponible').textContent = tarjeta.saldoDisponible.toFixed(2) || '';
+                    document.getElementById('cuotaMinima').textContent = tarjeta.cuotaMinima.toFixed(2) || '';
+                    document.getElementById('montoContado').textContent = tarjeta.montoContado.toFixed(2) || '';
+                    document.getElementById('saldoActual').textContent = tarjeta.saldoActual.toFixed(2) || '';
+                    document.getElementById('intBonificable').textContent = tarjeta.intBonificable.toFixed(2) || '';
+                    
+
+                    const numeroTarjeta = tarjeta.numeroTarjeta || '';
+                    const ocultar = '*'.repeat(numeroTarjeta.length - 4);
+                    const visibles = numeroTarjeta.slice(-4);
+                    document.getElementById('numeroTarjeta').textContent = `${ocultar}${visibles}`;
+                } else {
+                    console.log('No se encontraron datos para la tarjeta de crédito.');
+                }
+            })
+            .catch(error => {
+                console.error('Error en la llamada a la API:', error);
+            });
+    }
+
+    //METODO PARA GUARDAR EL PAGO
+    function guardarPago() {
+        var idTarjetaCredito = $("#txtidTarjetaCredito").val();
+        var monto = parseFloat($("#txtmonto").val()) || 0.00;
+
+        var request = {
+            idTarjetaCredito: idTarjetaCredito ? parseInt(idTarjetaCredito) : 0,
+            monto: monto
+        };
+
+        var url = `https://localhost:7069/api/Pago/PostPago/${idTarjetaCredito}`;
+        var method = "POST";
+
+        jQuery.ajax({
+            url: url,
+            type: method,
+            data: JSON.stringify(request),
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data) {
+                    $("#txtmonto").val(0.00);
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: 'Pago realizado correctamente!',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo guardar los cambios.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                console.log(xhr.responseText);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al procesar la solicitud: ' + xhr.responseText,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    }
+</script>
+}
+

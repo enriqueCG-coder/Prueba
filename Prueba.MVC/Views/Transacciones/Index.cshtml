@@ -1,0 +1,177 @@
+﻿@{
+    ViewData["Title"] = "Transacciones";
+}
+
+<ol class="breadcrumb mb-4 mt-4">
+    <li class="breadcrumb-item">Opciones</li>
+    <li class="breadcrumb-item">Listado de Tarjetas</li>
+    <li class="breadcrumb-item active">Transacciones</li>
+</ol>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-file-invoice me-1"></i> Listado de Transacciones TC
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <input type="hidden" id="txtidTarjetaCredito" value="@ViewBag.IdTarjetaCredito" />
+
+            <div class="col-sm-12">
+                <label><strong>Nombre del Cliente:</strong></label>
+                <span id="nombres"></span> <span id="apellidos"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <label><strong>Número de Tarjeta de Crédito:</strong></label>
+                <span id="numeroTarjeta"></span>
+            </div>
+        </div>
+
+        <hr />
+        <table id="tabla" class="display responsive" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Número de Autorización</th>
+                    <th>Fecha</th>
+                    <th>Descripción</th>
+                    <th>Cargo</th>
+                    <th>Abono</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+
+@section scripts{
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const idTarjetaCredito = params.get('idTarjetaCredito');
+
+        console.log('ID Tarjeta de Crédito:', idTarjetaCredito); 
+
+        if (idTarjetaCredito) {
+            obtenerDatosTarjeta(idTarjetaCredito);
+            cargar(idTarjetaCredito);
+        } else {
+            console.log('No se encontró ID de Tarjeta de Crédito en la URL');
+        }
+    });
+
+    //METODO PARA CARGAR LOS DATOS 
+    function obtenerDatosTarjeta(idTarjetaCredito) {
+        const apiUrl = `https://localhost:7069/api/TarjetaCred/GetById/${idTarjetaCredito}`;
+
+        console.log('URL de la API:', apiUrl); 
+
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener los datos de la tarjeta');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Datos de la tarjeta obtenidos:', data);
+
+                if (Array.isArray(data) && data.length > 0) {
+                    const tarjeta = data[0]; 
+
+                    document.getElementById('nombres').textContent = tarjeta.nombres || '';
+                    document.getElementById('apellidos').textContent = tarjeta.apellidos || '';
+
+                    const numeroTarjeta = tarjeta.numeroTarjeta || '';
+                    const ocultar = '*'.repeat(numeroTarjeta.length - 4);
+                    const visibles = numeroTarjeta.slice(-4);
+                    document.getElementById('numeroTarjeta').textContent = `${ocultar}${visibles}`;
+                } else {
+                    console.log('No se encontraron datos para la tarjeta de crédito.');
+                }
+            })
+            .catch(error => {
+                console.error('Error en la llamada a la API:', error);
+            });
+    }
+
+
+    var tabladata;
+
+    $(document).ready(function () {
+    });
+
+    // Método para cargar datos en la tabla
+    function cargar(idTarjetaCredito) {
+    tabladata = $('#tabla').DataTable({
+        responsive: true,
+        "ajax": {
+            "url": `https://localhost:7069/api/Transacciones/GetTransaccionesById/${idTarjetaCredito}`,
+            "type": "GET",
+            "datatype": "json",
+            "dataSrc": "" ,
+            "beforeSend": function () {
+                Swal.fire({
+                    title: 'Cargando...',
+                    text: 'Por favor espera mientras se cargan los datos.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            }
+        },
+        "columns": [
+            { "data": "numAutorizacion" },
+            { "data": "fecha" },
+            { "data": "descripcion" },
+            { "data": "cargo" },
+            { "data": "abono" }
+            
+
+        ],
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json"
+        },
+        "preXhr": function () {
+            Swal.fire({
+                title: 'Cargando...',
+                text: 'Por favor, espera mientras se cargan los datos.',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        },
+        "xhr": function () {
+            Swal.close();
+        },
+        "initComplete": function (settings, json) {
+            Swal.fire({
+                title: 'Datos Cargados',
+                text: 'Los datos se han cargado correctamente en la tabla.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+    }
+
+    
+
+</script>
+}
+
+
+
+
+
+
+
+
+
+
