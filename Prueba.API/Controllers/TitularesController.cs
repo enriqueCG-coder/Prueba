@@ -43,7 +43,7 @@ namespace Prueba.API.Controllers
         {
             try
             {
-                if (titular == null)
+                if (string.IsNullOrEmpty(titular.Nombres) || string.IsNullOrEmpty(titular.Apellidos))
                 {
                     return BadRequest("Datos del titular no proporcionados.");
                 }
@@ -64,10 +64,10 @@ namespace Prueba.API.Controllers
         [Route("PutTitular/{idTitularTarjeta}")]
         public async Task<IActionResult> PutTitular(int id, Titular titular)
         {
-            
-            if (titular == null )
+
+            if (string.IsNullOrEmpty(titular.Nombres) || string.IsNullOrEmpty(titular.Apellidos))
             {
-                return BadRequest("Datos del titular no proporcionados");
+                return BadRequest("Datos del titular no proporcionados.");
             }
 
             try

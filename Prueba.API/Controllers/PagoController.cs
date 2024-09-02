@@ -22,7 +22,7 @@ namespace Prueba.API.Controllers
         {
             try
             {
-                if (c == null)
+                if ( c.Monto == 0)
                 {
                     return BadRequest("Monto no ingresado.");
                 }

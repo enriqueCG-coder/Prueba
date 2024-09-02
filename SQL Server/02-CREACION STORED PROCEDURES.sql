@@ -148,13 +148,13 @@ AS
 BEGIN
     DECLARE @NumeroAleatorio INT;
     DECLARE @Existe INT;
-    DECLARE @SaldoActual DECIMAL(10, 2);
+    DECLARE @SaldoDisponible DECIMAL(10, 2);
 
-    SELECT @SaldoActual = SaldoActual
+    SELECT @SaldoDisponible = SaldoDisponible
     FROM TarjetaCredito
     WHERE IdTarjetaCredito = @IdTarjetaCredito;
 
-    IF @SaldoActual < @Monto
+    IF @SaldoDisponible < @Monto
     BEGIN
         RAISERROR('El monto de la compra excede el saldo disponible de la tarjeta.', 16, 1);
         RETURN;

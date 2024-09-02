@@ -22,7 +22,7 @@ namespace Prueba.API.Controllers
         {
             try
             {
-                if (c == null)
+                if (string.IsNullOrEmpty(c.Descripcion) || c.Monto == 0 )
                 {
                     return BadRequest("Datos de compra no proporcionados.");
                 }

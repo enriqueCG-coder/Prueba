@@ -43,9 +43,14 @@ namespace Prueba.API.Controllers
         {
             try
             {
-                if (tc == null)
+                if (string.IsNullOrEmpty(tc.NumeroTarjeta) || tc.LimiteCredito == 0 || tc.PorcentInteres == 0)
                 {
-                    return BadRequest("Datos del titular no proporcionados.");
+                    return BadRequest("Datos de tarjeta no proporcionados.");
+                }
+
+                if (tc.NumeroTarjeta.Length != 16 || !tc.NumeroTarjeta.All(char.IsDigit))
+                {
+                    return BadRequest("El número de la tarjeta debe tener 16 dígitos.");
                 }
 
                 var result = await _context.Database.ExecuteSqlRawAsync("sp_InsertarTC @IdTitularTarjeta = {0}, @NumeroTarjeta = {1}, @SaldoActual = {2}, @LimiteCredito = {3}, @PorcentInteres = {4}, @PorcentIntSaldoMin = {5}, @Estado = {6}",
@@ -69,25 +74,30 @@ namespace Prueba.API.Controllers
 
         [HttpPut]
         [Route("PutTarjeta/{idTarjetaCredito}")]
-        public async Task<IActionResult> PutTarjeta(int idTarjetaCredito, TarjetaCredito tarjeta)
+        public async Task<IActionResult> PutTarjeta(int idTarjetaCredito, TarjetaCredito tc)
         {
-            if (tarjeta == null)
+            if (string.IsNullOrEmpty(tc.NumeroTarjeta) || tc.LimiteCredito == 0 || tc.PorcentInteres == 0)
             {
-                return BadRequest("Datos de la tarjeta no proporcionados");
+                return BadRequest("Datos de tarjeta no proporcionados.");
+            }
+
+            if (tc.NumeroTarjeta.Length != 16 || !tc.NumeroTarjeta.All(char.IsDigit))
+            {
+                return BadRequest("El número de la tarjeta debe tener 16 dígitos.");
             }
 
             try
             {
                 var result = await _context.Database.ExecuteSqlRawAsync(
                     "EXEC sp_ModificarTC @IdTarjetaCredito = {0}, @IdTitularTarjeta = {1}, @NumeroTarjeta = {2}, @SaldoActual = {3}, @LimiteCredito = {4}, @PorcentInteres = {5}, @PorcentIntSaldoMin = {6}, @Estado = {7}",
-                    tarjeta.IdTarjetaCredito,
-                    tarjeta.IdTitularTarjeta,
-                    tarjeta.NumeroTarjeta,
-                    tarjeta.SaldoActual,
-                    tarjeta.LimiteCredito,
-                    tarjeta.PorcentInteres,
-                    tarjeta.PorcentIntSaldoMin,
-                    tarjeta.Estado ? 1 : 0 
+                    tc.IdTarjetaCredito,
+                    tc.IdTitularTarjeta,
+                    tc.NumeroTarjeta,
+                    tc.SaldoActual,
+                    tc.LimiteCredito,
+                    tc.PorcentInteres,
+                    tc.PorcentIntSaldoMin,
+                    tc.Estado ? 1 : 0 
                 );
 
                 return Ok(result);
